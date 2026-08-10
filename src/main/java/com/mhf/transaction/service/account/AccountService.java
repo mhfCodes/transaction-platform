@@ -2,6 +2,7 @@ package com.mhf.transaction.service.account;
 
 import com.mhf.transaction.dto.account.AccountResponse;
 import com.mhf.transaction.dto.account.CreateAccountRequest;
+import com.mhf.transaction.exception.AccountNotFoundException;
 import com.mhf.transaction.mapper.account.AccountMapper;
 import com.mhf.transaction.model.account.Account;
 import com.mhf.transaction.repository.account.AccountRepository;
@@ -27,6 +28,13 @@ public class AccountService {
 
         return accountMapper.toResponse(savedAccount);
 
+    }
+
+    public AccountResponse getAccountById(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(id));
+
+        return accountMapper.toResponse(account);
     }
 
 }

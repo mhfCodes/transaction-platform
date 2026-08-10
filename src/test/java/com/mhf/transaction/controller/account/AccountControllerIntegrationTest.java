@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +50,7 @@ public class AccountControllerIntegrationTest {
         assertThat(responseBody).isNotNull();
         assertThat(responseBody.getId()).isNotNull();
         assertThat(responseBody.getAccountNumber())
-                .isEqualTo("ACC-10001");
+                .isEqualTo("ACC-" + UUID.randomUUID());
         assertThat(responseBody.getOwnerName())
                 .isEqualTo("John Doe");
         assertThat(responseBody.getBalance())
@@ -70,6 +71,53 @@ public class AccountControllerIntegrationTest {
         assertThat(savedAccount.getCurrency())
                 .isEqualTo("USD");
 
+    }
+
+    @Test
+    void shouldGetAccountById() {
+
+        Account account = new Account();
+        account.setAccountNumber("ACC-" + UUID.randomUUID());
+        account.setOwnerName("Jane Doe");
+        account.setBalance(new BigDecimal("2500.00"));
+        account.setCurrency("EUR");
+
+        Account savedAccount = accountRepository.save(account);
+
+        ResponseEntity<AccountResponse> response = restTemplate.getForEntity(
+                "/api/accounts/" + savedAccount.getId(),
+                AccountResponse.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        AccountResponse responseBody = response.getBody();
+
+        assertThat(responseBody).isNotNull();
+        assertThat(responseBody.getId()).isEqualTo(savedAccount.getId());
+        assertThat(responseBody.getAccountNumber())
+                .isEqualTo("ACC-" + savedAccount.getAccountNumber().substring(4));
+        assertThat(responseBody.getOwnerName())
+                .isEqualTo("Jane Doe");
+        assertThat(responseBody.getBalance())
+                .isEqualByComparingTo("2500.00");
+        assertThat(responseBody.getCurrency())
+                .isEqualTo("EUR");
+        assertThat(responseBody.getCreatedAt())
+                .isNotNull();
+
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenAccountDoesNotExist() {
+        Long nonExistingId = Long.MAX_VALUE;
+
+        ResponseEntity<Void> response = restTemplate.getForEntity(
+                "/api/accounts/" + nonExistingId,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
 
