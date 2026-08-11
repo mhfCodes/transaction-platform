@@ -350,6 +350,91 @@ public class TransactionControllerIntegrationTest {
                 .isZero();
     }
 
+    @Test
+    void shouldGetTransactionById() {
+
+        Account sourceAccount = createAccount(
+                "Source Account",
+                new BigDecimal("1000.00"),
+                "USD"
+        );
+
+        Account destinationAccount = createAccount(
+                "Destination Account",
+                new BigDecimal("500.00"),
+                "USD"
+        );
+
+        TransactionRequest transactionRequest = createTransferRequest(
+                sourceAccount,
+                destinationAccount,
+                new BigDecimal("250.00"),
+                "USD"
+        );
+
+        ResponseEntity<TransactionResponse> transactionResponse =
+                restTemplate.postForEntity(
+                        "/api/transactions",
+                        transactionRequest,
+                        TransactionResponse.class
+                );
+
+        assertThat(transactionResponse.getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+
+        Long transactionId = transactionResponse.getBody().getTransactionId();
+
+        ResponseEntity<TransactionResponse> response = restTemplate.getForEntity(
+                "/api/transactions/" + transactionId,
+                TransactionResponse.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        TransactionResponse responseBody = response.getBody();
+
+        assertThat(responseBody).isNotNull();
+
+        assertThat(responseBody.getTransactionId())
+                .isEqualTo(transactionId);
+
+        assertThat(responseBody.getSourceAccountId())
+                .isEqualTo(sourceAccount.getId());
+
+        assertThat(responseBody.getDestinationAccountId())
+                .isEqualTo(destinationAccount.getId());
+
+        assertThat(responseBody.getAmount())
+                .isEqualByComparingTo("250.00");
+
+        assertThat(responseBody.getCurrency())
+                .isEqualTo("USD");
+
+        assertThat(responseBody.getStatus())
+                .hasToString("COMPLETED");
+
+        assertThat(responseBody.getCreatedAt())
+                .isNotNull();
+
+        assertThat(responseBody.getCompletedAt())
+                .isNotNull();
+
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenTransactionDoesNotExist() {
+        Long nonExistingId = Long.MAX_VALUE;
+
+        ResponseEntity<Void> response = restTemplate.getForEntity(
+                "/api/transactions/" + nonExistingId,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+    }
+
+
     private Account createAccount(
             String ownerName,
             BigDecimal balance,
