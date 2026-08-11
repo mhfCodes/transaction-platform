@@ -1,7 +1,7 @@
 package com.mhf.transaction.controller.transaction;
 
-import com.mhf.transaction.dto.transaction.TransferRequest;
-import com.mhf.transaction.dto.transaction.TransferResponse;
+import com.mhf.transaction.dto.transaction.TransactionRequest;
+import com.mhf.transaction.dto.transaction.TransactionResponse;
 import com.mhf.transaction.model.account.Account;
 import com.mhf.transaction.repository.account.AccountRepository;
 import com.mhf.transaction.repository.transaction.TransactionRepository;
@@ -53,23 +53,23 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = new TransferRequest();
+        TransactionRequest request = new TransactionRequest();
 
         request.setSourceAccountId(sourceAccount.getId());
         request.setDestinationAccountId(destinationAccount.getId());
         request.setAmount(new BigDecimal("250.00"));
         request.setCurrency("USD");
 
-        ResponseEntity<TransferResponse> response = restTemplate.postForEntity(
+        ResponseEntity<TransactionResponse> response = restTemplate.postForEntity(
                 "/api/transactions",
                 request,
-                TransferResponse.class
+                TransactionResponse.class
         );
 
         assertThat(response.getStatusCode())
                 .isEqualTo(HttpStatus.CREATED);
 
-        TransferResponse responseBody = response.getBody();
+        TransactionResponse responseBody = response.getBody();
 
         assertThat(responseBody).isNotNull();
 
@@ -131,7 +131,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = createTransferRequest(
+        TransactionRequest request = createTransferRequest(
                 sourceAccount,
                 destinationAccount,
                 new BigDecimal("150.00"),
@@ -175,7 +175,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = new TransferRequest();
+        TransactionRequest request = new TransactionRequest();
 
         request.setSourceAccountId(Long.MAX_VALUE);
         request.setDestinationAccountId(destinationAccount.getId());
@@ -204,7 +204,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = new TransferRequest();
+        TransactionRequest request = new TransactionRequest();
 
         request.setSourceAccountId(sourceAccount.getId());
         request.setDestinationAccountId(Long.MAX_VALUE);
@@ -242,7 +242,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = new TransferRequest();
+        TransactionRequest request = new TransactionRequest();
 
         request.setSourceAccountId(account.getId());
         request.setDestinationAccountId(account.getId());
@@ -286,7 +286,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = createTransferRequest(
+        TransactionRequest request = createTransferRequest(
                 sourceAccount,
                 destinationAccount,
                 BigDecimal.ZERO,
@@ -322,7 +322,7 @@ public class TransactionControllerIntegrationTest {
                 "USD"
         );
 
-        TransferRequest request = createTransferRequest(
+        TransactionRequest request = createTransferRequest(
                 sourceAccount,
                 destinationAccount,
                 new BigDecimal("100.00"),
@@ -367,13 +367,13 @@ public class TransactionControllerIntegrationTest {
         return accountRepository.save(account);
     }
 
-    private TransferRequest createTransferRequest(
+    private TransactionRequest createTransferRequest(
             Account sourceAccount,
             Account destinationAccount,
             BigDecimal amount,
             String currency) {
 
-        TransferRequest request = new TransferRequest();
+        TransactionRequest request = new TransactionRequest();
 
         request.setSourceAccountId(sourceAccount.getId());
         request.setDestinationAccountId(destinationAccount.getId());

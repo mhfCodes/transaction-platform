@@ -2,7 +2,7 @@ package com.mhf.transaction.dto.transaction;
 
 import java.math.BigDecimal;
 
-public class TransferRequest {
+public class TransactionRequest {
 
     private Long sourceAccountId;
     private Long destinationAccountId;

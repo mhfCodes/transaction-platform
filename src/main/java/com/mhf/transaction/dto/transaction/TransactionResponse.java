@@ -5,7 +5,7 @@ import com.mhf.transaction.model.transaction.TransactionStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public class TransferResponse {
+public class TransactionResponse {
 
     private Long transactionId;
     private Long sourceAccountId;

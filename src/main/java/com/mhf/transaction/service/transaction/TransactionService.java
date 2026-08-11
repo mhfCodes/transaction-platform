@@ -1,7 +1,7 @@
 package com.mhf.transaction.service.transaction;
 
-import com.mhf.transaction.dto.transaction.TransferRequest;
-import com.mhf.transaction.dto.transaction.TransferResponse;
+import com.mhf.transaction.dto.transaction.TransactionRequest;
+import com.mhf.transaction.dto.transaction.TransactionResponse;
 import com.mhf.transaction.exception.AccountNotFoundException;
 import com.mhf.transaction.exception.InsufficientBalanceException;
 import com.mhf.transaction.exception.InvalidTransferException;
@@ -33,7 +33,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransferResponse transfer(TransferRequest request) {
+    public TransactionResponse transfer(TransactionRequest request) {
 
         validateRequest(request);
 
@@ -65,7 +65,7 @@ public class TransactionService {
         return transactionMapper.toTransferResponse(savedTransaction);
     }
 
-    private void validateRequest(TransferRequest request) {
+    private void validateRequest(TransactionRequest request) {
 
         if (request == null)
             throw new InvalidTransferException("Transfer request must not be null");
@@ -89,7 +89,7 @@ public class TransactionService {
 
     private void validateCurrency(Account sourceAccount,
                                   Account destinationAccount,
-                                  TransferRequest request) {
+                                  TransactionRequest request) {
 
         if (!sourceAccount.getCurrency().equalsIgnoreCase(request.getCurrency()))
             throw new InvalidTransferException("Transfer currency does not match source account currency");

@@ -1,7 +1,7 @@
 package com.mhf.transaction.controller.transaction;
 
-import com.mhf.transaction.dto.transaction.TransferRequest;
-import com.mhf.transaction.dto.transaction.TransferResponse;
+import com.mhf.transaction.dto.transaction.TransactionRequest;
+import com.mhf.transaction.dto.transaction.TransactionResponse;
 import com.mhf.transaction.service.transaction.TransactionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +21,9 @@ public class TransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<TransferResponse> transfer(@RequestBody TransferRequest request) {
+    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request) {
 
-        TransferResponse response = transactionService.transfer(request);
+        TransactionResponse response = transactionService.transfer(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
