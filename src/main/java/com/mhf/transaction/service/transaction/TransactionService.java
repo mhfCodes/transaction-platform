@@ -1,7 +1,102 @@
 package com.mhf.transaction.service.transaction;
 
+import com.mhf.transaction.dto.transaction.TransferRequest;
+import com.mhf.transaction.dto.transaction.TransferResponse;
+import com.mhf.transaction.exception.AccountNotFoundException;
+import com.mhf.transaction.exception.InsufficientBalanceException;
+import com.mhf.transaction.exception.InvalidTransferException;
+import com.mhf.transaction.mapper.transaction.TransactionMapper;
+import com.mhf.transaction.model.account.Account;
+import com.mhf.transaction.model.transaction.Transaction;
+import com.mhf.transaction.model.transaction.TransactionStatus;
+import com.mhf.transaction.repository.account.AccountRepository;
+import com.mhf.transaction.repository.transaction.TransactionRepository;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Service
 public class TransactionService {
+
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
+    private final TransactionMapper transactionMapper;
+
+    public TransactionService(AccountRepository accountRepository,
+                              TransactionRepository transactionRepository,
+                              TransactionMapper transactionMapper) {
+        this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
+        this.transactionMapper = transactionMapper;
+    }
+
+    @Transactional
+    public TransferResponse transfer(TransferRequest request) {
+
+        validateRequest(request);
+
+        Account sourceAccount = accountRepository.findById(request.getSourceAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(request.getSourceAccountId()));
+
+        Account destinationAccount = accountRepository.findById(request.getDestinationAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(request.getDestinationAccountId()));
+
+        validateCurrency(sourceAccount, destinationAccount,request);
+
+        if (sourceAccount.getBalance().compareTo(request.getAmount()) < 0)
+            throw new InsufficientBalanceException(sourceAccount.getId());
+
+        sourceAccount.setBalance(sourceAccount.getBalance().subtract(request.getAmount()));
+
+        destinationAccount.setBalance(destinationAccount.getBalance().add(request.getAmount()));
+
+        Transaction transaction = new Transaction();
+        transaction.setSourceAccount(sourceAccount);
+        transaction.setDestinationAccount(destinationAccount);
+        transaction.setAmount(request.getAmount());
+        transaction.setCurrency(request.getCurrency());
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transaction.setCompletedAt(Instant.now());
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return transactionMapper.toTransferResponse(savedTransaction);
+    }
+
+    private void validateRequest(TransferRequest request) {
+
+        if (request == null)
+            throw new InvalidTransferException("Transfer request must not be null");
+
+        if (request.getSourceAccountId() == null)
+            throw new InvalidTransferException("Source account ID is required");
+
+        if (request.getDestinationAccountId() == null)
+            throw new InvalidTransferException("Destination account ID is required");
+
+        if (request.getSourceAccountId().equals(request.getDestinationAccountId()))
+            throw new InvalidTransferException("Source and destination accounts must be different");
+
+        if (request.getAmount() == null || request.getAmount().signum() <= 0)
+            throw new InvalidTransferException("Transfer amount must be greater than zero");
+
+        if (request.getCurrency() == null || request.getCurrency().isBlank())
+            throw new InvalidTransferException("Currency is required");
+
+    }
+
+    private void validateCurrency(Account sourceAccount,
+                                  Account destinationAccount,
+                                  TransferRequest request) {
+
+        if (!sourceAccount.getCurrency().equalsIgnoreCase(request.getCurrency()))
+            throw new InvalidTransferException("Transfer currency does not match source account currency");
+
+        if (!destinationAccount.getCurrency().equalsIgnoreCase(request.getCurrency()))
+            throw new InvalidTransferException("Transfer currency does not match destination account currency");
+
+    }
+
 }
