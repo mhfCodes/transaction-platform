@@ -13,4 +13,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<Void> handleInsufficientBalance(InsufficientBalanceException exception) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).build();
+    }
+
+    @ExceptionHandler(InvalidTransferException.class)
+    public ResponseEntity<Void> handleInvalidTransfer(InvalidTransferException exception) {
+        return ResponseEntity.badRequest().build();
+    }
+
 }
