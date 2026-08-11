@@ -23,4 +23,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().build();
     }
 
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<Void> handleTransactionNotFound(TransactionNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 }

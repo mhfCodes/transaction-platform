@@ -5,6 +5,7 @@ import com.mhf.transaction.dto.transaction.TransactionResponse;
 import com.mhf.transaction.exception.AccountNotFoundException;
 import com.mhf.transaction.exception.InsufficientBalanceException;
 import com.mhf.transaction.exception.InvalidTransferException;
+import com.mhf.transaction.exception.TransactionNotFoundException;
 import com.mhf.transaction.mapper.transaction.TransactionMapper;
 import com.mhf.transaction.model.account.Account;
 import com.mhf.transaction.model.transaction.Transaction;
@@ -85,6 +86,14 @@ public class TransactionService {
         if (request.getCurrency() == null || request.getCurrency().isBlank())
             throw new InvalidTransferException("Currency is required");
 
+    }
+
+    public TransactionResponse getById(Long id) {
+
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new TransactionNotFoundException(id));
+
+        return transactionMapper.toTransferResponse(transaction);
     }
 
     private void validateCurrency(Account sourceAccount,
