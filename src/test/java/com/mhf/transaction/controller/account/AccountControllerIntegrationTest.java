@@ -32,7 +32,7 @@ public class AccountControllerIntegrationTest {
     void shouldCreateAccount() {
 
         CreateAccountRequest request = new CreateAccountRequest();
-        request.setAccountNumber("ACC-10001");
+        request.setAccountNumber("ACC-" + UUID.randomUUID());
         request.setOwnerName("John Doe");
         request.setBalance(new BigDecimal("1000.00"));
         request.setCurrency("USD");
@@ -50,7 +50,7 @@ public class AccountControllerIntegrationTest {
         assertThat(responseBody).isNotNull();
         assertThat(responseBody.getId()).isNotNull();
         assertThat(responseBody.getAccountNumber())
-                .isEqualTo("ACC-" + UUID.randomUUID());
+                .isEqualTo(request.getAccountNumber());
         assertThat(responseBody.getOwnerName())
                 .isEqualTo("John Doe");
         assertThat(responseBody.getBalance())
@@ -63,7 +63,7 @@ public class AccountControllerIntegrationTest {
         Account savedAccount = accountRepository.findById(responseBody.getId()).orElseThrow();
 
         assertThat(savedAccount.getAccountNumber())
-                .isEqualTo("ACC-10001");
+                .isEqualTo(request.getAccountNumber());
         assertThat(savedAccount.getOwnerName())
                 .isEqualTo("John Doe");
         assertThat(savedAccount.getBalance())
