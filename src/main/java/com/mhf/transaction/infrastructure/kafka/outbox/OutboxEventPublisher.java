@@ -22,7 +22,7 @@ public class OutboxEventPublisher {
     }
 
     @Transactional
-    public void publicUnpublishedEvents() {
+    public void publishUnpublishedEvents() {
 
         List<OutboxEvent> events = outboxEventRepository.findByPublishedAtIsNull();
 
