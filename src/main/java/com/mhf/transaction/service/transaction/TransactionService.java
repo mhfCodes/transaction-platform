@@ -6,6 +6,9 @@ import com.mhf.transaction.exception.AccountNotFoundException;
 import com.mhf.transaction.exception.InsufficientBalanceException;
 import com.mhf.transaction.exception.InvalidTransferException;
 import com.mhf.transaction.exception.TransactionNotFoundException;
+import com.mhf.transaction.infrastructure.kafka.event.TransactionCompletedEvent;
+import com.mhf.transaction.infrastructure.kafka.outbox.OutboxEvent;
+import com.mhf.transaction.infrastructure.kafka.outbox.OutboxEventRepository;
 import com.mhf.transaction.mapper.transaction.TransactionMapper;
 import com.mhf.transaction.model.account.Account;
 import com.mhf.transaction.model.transaction.Transaction;
@@ -15,6 +18,8 @@ import com.mhf.transaction.repository.transaction.TransactionRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 
@@ -23,14 +28,21 @@ public class TransactionService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final OutboxEventRepository outboxEventRepository;
     private final TransactionMapper transactionMapper;
+    private final ObjectMapper objectMapper;
 
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
-                              TransactionMapper transactionMapper) {
+                              OutboxEventRepository outboxEventRepository,
+                              TransactionMapper transactionMapper,
+                              ObjectMapper objectMapper) {
+
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.outboxEventRepository = outboxEventRepository;
         this.transactionMapper = transactionMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -63,7 +75,47 @@ public class TransactionService {
 
         Transaction savedTransaction = transactionRepository.save(transaction);
 
+        TransactionCompletedEvent event = new TransactionCompletedEvent(
+                savedTransaction.getId(),
+                sourceAccount.getId(),
+                destinationAccount.getId(),
+                savedTransaction.getAmount(),
+                savedTransaction.getCurrency()
+        );
+
+        String payload = serializeEvent(event);
+
+        OutboxEvent outboxEvent = new OutboxEvent();
+
+        outboxEvent.setEventType(TransactionCompletedEvent.class.getSimpleName());
+
+        outboxEvent.setAggregateId(savedTransaction.getId().toString());
+
+        outboxEvent.setPayload(payload);
+
+        outboxEventRepository.save(outboxEvent);
+
         return transactionMapper.toTransferResponse(savedTransaction);
+    }
+
+    public TransactionResponse getById(Long id) {
+
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new TransactionNotFoundException(id));
+
+        return transactionMapper.toTransferResponse(transaction);
+    }
+
+    private String serializeEvent(TransactionCompletedEvent event) {
+
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (JacksonException exception) {
+            throw new IllegalStateException(
+                    "Failed to serialize transaction completed event",
+                    exception
+            );
+        }
     }
 
     private void validateRequest(TransactionRequest request) {
@@ -86,14 +138,6 @@ public class TransactionService {
         if (request.getCurrency() == null || request.getCurrency().isBlank())
             throw new InvalidTransferException("Currency is required");
 
-    }
-
-    public TransactionResponse getById(Long id) {
-
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new TransactionNotFoundException(id));
-
-        return transactionMapper.toTransferResponse(transaction);
     }
 
     private void validateCurrency(Account sourceAccount,
