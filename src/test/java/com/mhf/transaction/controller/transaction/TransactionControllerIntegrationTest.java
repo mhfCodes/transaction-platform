@@ -2,6 +2,8 @@ package com.mhf.transaction.controller.transaction;
 
 import com.mhf.transaction.dto.transaction.TransactionRequest;
 import com.mhf.transaction.dto.transaction.TransactionResponse;
+import com.mhf.transaction.infrastructure.kafka.outbox.OutboxEvent;
+import com.mhf.transaction.infrastructure.kafka.outbox.OutboxEventRepository;
 import com.mhf.transaction.model.account.Account;
 import com.mhf.transaction.repository.account.AccountRepository;
 import com.mhf.transaction.repository.transaction.TransactionRepository;
@@ -32,8 +34,12 @@ public class TransactionControllerIntegrationTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private OutboxEventRepository outboxEventRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        outboxEventRepository.deleteAll();
         transactionRepository.deleteAll();
         accountRepository.deleteAll();
     }
@@ -114,6 +120,41 @@ public class TransactionControllerIntegrationTest {
         assertThat(transactionRepository.count())
                 .isEqualTo(1);
 
+        assertThat(outboxEventRepository.count())
+                .isEqualTo(1);
+
+        OutboxEvent outboxEvent =
+                outboxEventRepository.findAll()
+                        .get(0);
+
+        assertThat(outboxEvent.getEventType())
+                .isEqualTo("TransactionCompletedEvent");
+
+        assertThat(outboxEvent.getAggregateId())
+                .isEqualTo(
+                        responseBody.getTransactionId().toString()
+                );
+
+        assertThat(outboxEvent.getPayload())
+                .contains("\"transactionId\"");
+
+        assertThat(outboxEvent.getPayload())
+                .contains("\"sourceAccountId\"");
+
+        assertThat(outboxEvent.getPayload())
+                .contains("\"destinationAccountId\"");
+
+        assertThat(outboxEvent.getPayload())
+                .contains("\"amount\"");
+
+        assertThat(outboxEvent.getPayload())
+                .contains("\"currency\"");
+
+        /*
+         * The event has not been published to Kafka yet.
+         */
+        assertThat(outboxEvent.getPublishedAt())
+                .isNull();
     }
 
     @Test
@@ -164,6 +205,8 @@ public class TransactionControllerIntegrationTest {
         assertThat(transactionRepository.count())
                 .isZero();
 
+        assertThat(outboxEventRepository.count())
+                .isZero();
     }
 
     @Test
