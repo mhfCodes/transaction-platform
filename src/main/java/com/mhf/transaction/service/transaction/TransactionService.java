@@ -16,6 +16,7 @@ import com.mhf.transaction.model.transaction.TransactionStatus;
 import com.mhf.transaction.repository.account.AccountRepository;
 import com.mhf.transaction.repository.transaction.TransactionRepository;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
@@ -98,6 +99,10 @@ public class TransactionService {
         return transactionMapper.toTransferResponse(savedTransaction);
     }
 
+    @Cacheable(
+            value = "transactions",
+            key = "#id"
+    )
     public TransactionResponse getById(Long id) {
 
         Transaction transaction = transactionRepository.findById(id)
