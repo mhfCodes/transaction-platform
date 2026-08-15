@@ -16,6 +16,8 @@ import com.mhf.transaction.model.transaction.TransactionStatus;
 import com.mhf.transaction.repository.account.AccountRepository;
 import com.mhf.transaction.repository.transaction.TransactionRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,8 @@ import java.time.Instant;
 
 @Service
 public class TransactionService {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
@@ -95,6 +99,16 @@ public class TransactionService {
         outboxEvent.setPayload(payload);
 
         outboxEventRepository.save(outboxEvent);
+
+        log.info(
+                "Transaction completed: transactionId={}, sourceAccountId={}, " +
+                        "destinationAccountId={}, amount={}, currency={}",
+                savedTransaction.getId(),
+                sourceAccount.getId(),
+                destinationAccount.getId(),
+                savedTransaction.getAmount(),
+                savedTransaction.getCurrency()
+        );
 
         return transactionMapper.toTransferResponse(savedTransaction);
     }
